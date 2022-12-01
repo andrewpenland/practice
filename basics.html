@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
+<script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+
+<title>Strategy</title>
+</head>
+<body>
+
+<h1> Strategy </h1>
+
+<em> "You got to know when to hold 'em, know when to fold 'em, know when to walk away, and know when to run." <br>
+  -- Kenny Rogers, "The Gambler" </em> <br>
+
+<p>Ultimately, a financial investment reflects the mindset of the person who makes it. If you know how someone spends their money, you can infer a lot about their priorities and beliefs. </p>
+<p> On the other hand, we expect that seeing how someone approaches a simple problem lets us know how they will approach more complicated problems in the future: this is the basis of many questions in a job interview. </p>
+<p> In 2019, then-CEO of Alameda (**todo: check**) Samuel Bankman-Fried tweeted (**todo: link**) a hot take on a classic question of strategy for the simple game of betting on a coin flip. Bankman-Fried's proposed strategy for optimal investment clashed with an idea established earlier known as the <em> Kelly Criterion. </em> </p>
+Our goal is to compare Bankman-Fried's proposed solution to the Kelly Criterion. Ultimately, we will leave it to the reader to decide who is right.
+
+<h2> A Basic Game </h2>
+
+If we actually play **BiasedCoinFlip** repeatedly, we will be able to add our winnings from one round to our winnings from another round. So the amount available will change, but is also irrelevant. What the player needs is a *strategy* about what *proportion* of their assets should be allocated to each turn.
+
+To make things a bit more interesting, let's expand our possibilities beyond double-or-nothing. We can consider the proportion of the player's bet that gain if they win; let's call this number $b$. In double-or-nothing, $b = 1$.
+
+A <em>strategy</em> simply describes how much we bet each turn. There are two simple strategies:
+* **YOLO**: bet the entire amount (100%) at our disposal each turn. If we hit an early winning streak, we will likely experience massive growth in the short term. As soon as we lose, we are bust.
+* **Don't Do Anything**: abstain from betting (i.e. bet 0%) each turn. The player will not lose any money, but will not make any either.
+
+Both of these strategies are a bit ridiculous, *because they do not take into account either probability of winning (p) or potential return on investment (b)*. Mathematically, what we want is a function $f(p)$ which considers the risk ($p$) and potential reward ($b$) and returns the fraction $f$ that the player should bet.
+
+To get a sense of how this works, try the game below. You can adjust risk ($p$) and reward ($b$), then input the number $f$ between 0 and 1 that you set as the fraction to bet on each turn.
+
+
+<h2>Playing the Game</h2>
+
+
+<label for="fname"> Probability of winning: </label>
+<input id="probslide" type="range" min="0.0" max="1.0" step="0.01" oninput="sliderChange(this.value)">
+<br>
+<label for="multamount">Bonus for winning: </label>
+<input type="text" value = 1.0 id="multamount" name="multamount">
+<br>
+<label for="betslide"> Proportion to bet: </label>
+<input id="betslide" type="range" min="0.0" max="1.0" step="0.01" oninput="sliderChange(this.value)">
+<br>
+<label for="numturns"> Number of turns: </label>
+<input type="text" value = 10 id="numturns" name="numturns">
+<br>
+<input id="clickMe" type="button" value="Play Game" onclick="generateGraph();" />
+
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+<script>
+function flipCoin(probability, multiplier, betSize){
+  flip = Math.random();
+  if(flip < probability){
+    winnings = (1 + multiplier) * betSize;
+    return winnings;
+  }
+  else{
+    winnings = 0;
+    return winnings;
+  }
+}
+
+function playGame(probability, multiplier, betProp, numTurns){
+  const trajectory = [];
+  trajectory[0] = 1;
+  bankRoll = 1;
+  for (let i = 1; i < numTurns; i++) {
+       betSize = bankRoll * betProp;
+       keptInHand = bankRoll - betSize;
+       resultOfPlay = flipCoin(probability, multiplier, betSize);
+       bankRoll = keptInHand + resultOfPlay;
+       trajectory[i] = bankRoll;
+    }
+    return trajectory;
+}
+
+function generateGraph(){
+
+ var PROBABILITY = document.getElementById("probslide").value;
+ var MULTIPLIER = parseFloat(document.getElementById("multamount").value);
+ var BETPROP = document.getElementById("betslide").value;
+ let NUMTURNS = parseInt(document.getElementById("numturns").value);
+
+ const turnNumber = [];
+ for (let i = 0; i < NUMTURNS; i++){
+   turnNumber[i] = i;
+ }
+ winnings = playGame(PROBABILITY, MULTIPLIER, BETPROP, NUMTURNS);
+
+
+var trace1 = {
+  x: turnNumber,
+  y: winnings,
+  mode: 'lines+markers',
+  type: 'scatter'
+};
+
+// var finalVal = winnings[NUMTURNS - 1];
+var maxVal = Math.max(winnings);
+
+var data = [trace1];
+
+Plotly.newPlot('my_dataviz', data);
+}
+</script>
+
+<!--Obviously, when choosing a strategy, it should be a function of the win probability $p$. What's the **best strategy** to employ? This question was considered in a seminal 1956 paper by [John Kelly, Jr.](https://en.wikipedia.org/wiki/John_Larry_Kelly_Jr.) entitled ["A New Interpretation of Information Rate"](https://www.princeton.edu/~wbialek/rome/refs/kelly_56.pdf), (**to-consider:** mention Kelly's role.), in which he developed the now-famous [Kelly Criterion](https://en.wikipedia.org/wiki/Kelly_criterion) for games wh--->
+
+
+<!--**Kelly Criterion for Betting on a Game (like BiasedCoinFlip):** If a player knows the probability of winning is $p$ and that a win will return $b$ times the original bet, the best strategy bet the percentage $$p - \frac{1-p}{b}$$ of the total amount on each turn.--->
+
+Let's call this function $\text{Kelly}(b,p)$
+
+<script>
+
+
+
+function Kelly(p,b){
+  return p - (1-p)/b;
+}
+
+
+
+</script>
+
+</body>
+</html>
